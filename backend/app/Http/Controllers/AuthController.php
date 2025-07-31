@@ -31,7 +31,8 @@ class AuthController extends Controller
         } catch (Exception $ex) {
             return response()->json([
                 "success" => false,
-                "message" => "User creation failed due to" . $ex->getMessage()
+                "message" => "User Creation Failed",
+                "error" => $ex->getMessage()
             ], 500);
         }
 
@@ -64,7 +65,8 @@ class AuthController extends Controller
         } catch (Exception $ex) {
             return response()->json([
                 "success" => false,
-                "message" => "Login failed due to" . $ex->getMessage()
+                "message" => "Login failed",
+                "error" => $ex->getMessage()
             ], 500);
         }
     }
@@ -80,7 +82,8 @@ class AuthController extends Controller
         } catch (Exception $ex) {
             return response()->json([
                 "success" => false,
-                "message" => "Logout failed due to" . $ex->getMessage()
+                "message" => "Logout Failed",
+                "error" => $ex->getMessage()
             ], 500);
         }
     }
