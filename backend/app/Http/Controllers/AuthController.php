@@ -61,7 +61,7 @@ class AuthController extends Controller
                 "success" => true,
                 "message" => "Login Success",
                 "token" => $token->plainTextToken
-            ], 200);
+            ], 200, ['Content-Type' => 'application/json']);
         } catch (Exception $ex) {
             return response()->json([
                 "success" => false,
