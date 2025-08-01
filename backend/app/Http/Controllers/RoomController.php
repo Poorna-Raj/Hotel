@@ -5,9 +5,17 @@ namespace App\Http\Controllers;
 use Exception;
 use App\Models\Room;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class RoomController extends Controller
+class RoomController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware("auth:sanctum", except: ["index", "show"])
+        ];
+    }
     /**
      * Display a listing of the resource.
      */
@@ -48,7 +56,7 @@ class RoomController extends Controller
             "status" => "required|string"
         ]);
         try {
-            Room::create($feilds);
+            $request->user()->rooms()->create($feilds);
             return response()->json([
                 "success" => true,
                 "message" => "Room Created Successfully"
@@ -88,8 +96,8 @@ class RoomController extends Controller
     public function update(Request $request, Room $room)
     {
         $feilds = $request->validate([
-            "name" => "required|string|max:100|unique:rooms",
-            "number" => "required|integer|unique:rooms",
+            "name" => "required|string|max:100|unique:rooms,name," . $room->id,
+            "number" => "required|integer|unique:rooms,number," . $room->id,
             "price" => "required|numeric",
             "occupancy" => "required|integer|min:1",
             "bed_type" => "required|string",
