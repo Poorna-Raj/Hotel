@@ -42,6 +42,8 @@ $(document).ready(function () {
                         .addClass("text-success")
                         .text("Login successful!")
                         .fadeIn();
+
+                    window.location.href("./new-booking.html");
                 } else {
                     console.error("Missing token in response.");
                     messageBox
