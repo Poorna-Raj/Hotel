@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Booking;
 use Exception;
+use App\Models\Room;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -64,7 +65,39 @@ class BookingController extends Controller implements HasMiddleware
             "status" => "required"
         ]);
 
+        $room = Room::find($feilds["room_id"]);
+        if (!$room->isAvailable()) {
+            return response()->json([
+                "success" => false,
+                "message" => "Selected room isn't available for booking"
+            ], 422);
+        }
+        if (!$room) {
+            return response()->json([
+                "success" => false,
+                "message" => "Invalid Room"
+            ], 404);
+        }
+        if ($room->canAccommodate($feilds["occupancy"])) {
+            return response()->json([
+                "success" => false,
+                "message" => "Booking occupancy exceeds the room capacity"
+            ], 422);
+        }
 
+        $clashingID = Booking::getClashingBookingId($feilds);
+        if ($clashingID !== null) {
+            return response()->json([
+                "success" => false,
+                "message" => "Booking clashes with existing booking ID: " . $clashingID,
+            ], 422);
+        }
+
+        $request->user()->booking()->create($feilds);
+        return response()->json([
+            "success" => true,
+            "message" => "Room Created Successfully"
+        ], 200);
     }
 
     /**

@@ -37,4 +37,8 @@ class Room extends Model
     {
         return strtolower($this->status) !== 'unavailable';
     }
+    public function canAccommodate(int $occupancy): bool
+    {
+        return $occupancy <= $this->occpancy;
+    }
 }
