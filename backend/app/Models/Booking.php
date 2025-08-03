@@ -47,7 +47,7 @@ class Booking extends Model
     public static function getClashingBookingId(array $data, ?int $ignoreBookingId = null): ?int
     {
         $potentialClashes = self::where('room_id', $data['room_id'])
-            ->where('status', '!=', 'Cancelled')
+            ->where('status', '!=', ['Cancelled', 'Checked Out'])
             ->when($ignoreBookingId, function ($query) use ($ignoreBookingId) {
                 $query->where('id', '!=', $ignoreBookingId);
             })
