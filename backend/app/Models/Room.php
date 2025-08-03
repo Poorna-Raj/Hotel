@@ -32,4 +32,9 @@ class Room extends Model
     {
         return $this->hasMany(Booking::class);
     }
+
+    public function isAvailable(): bool
+    {
+        return strtolower($this->status) !== 'unavailable';
+    }
 }
