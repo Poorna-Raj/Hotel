@@ -6,6 +6,7 @@ use Exception;
 use App\Models\Room;
 use App\Models\Booking;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
@@ -65,39 +66,56 @@ class BookingController extends Controller implements HasMiddleware
             "status" => "required"
         ]);
 
-        $room = Room::find($feilds["room_id"]);
-        if (!$room->isAvailable()) {
-            return response()->json([
-                "success" => false,
-                "message" => "Selected room isn't available for booking"
-            ], 422);
-        }
-        if (!$room) {
-            return response()->json([
-                "success" => false,
-                "message" => "Invalid Room"
-            ], 404);
-        }
-        if ($room->canAccommodate($feilds["occupancy"])) {
-            return response()->json([
-                "success" => false,
-                "message" => "Booking occupancy exceeds the room capacity"
-            ], 422);
-        }
+        try {
+            $room = Room::find($feilds["room_id"]);
+            if (!$room->isAvailable()) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Selected room isn't available for booking"
+                ], 422);
+            }
+            if (!$room) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Invalid Room"
+                ], 404);
+            }
+            if ($room->canAccommodate($feilds["occupancy"])) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Booking occupancy exceeds the room capacity"
+                ], 422);
+            }
 
-        $clashingID = Booking::getClashingBookingId($feilds);
-        if ($clashingID !== null) {
+            $clashingID = Booking::getClashingBookingId($feilds);
+            if ($clashingID !== null) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Booking clashes with existing booking ID: " . $clashingID,
+                ], 422);
+            }
+
+            if ($request->hasFile("nic_front")) {
+                $nicFrontPath = $request->file('nic_front')->store("nic_front", "public");
+                $feilds["nic_front"] = $nicFrontPath;
+            }
+            if ($request->hasFile("nic_back")) {
+                $nicBackPath = $request->file('nic_back')->store("nic_back", "public");
+                $feilds["nic_back"] = $nicBackPath;
+            }
+
+            $request->user()->booking()->create($feilds);
+            return response()->json([
+                "success" => true,
+                "message" => "Room Created Successfully"
+            ], 200);
+        } catch (Exception $ex) {
             return response()->json([
                 "success" => false,
-                "message" => "Booking clashes with existing booking ID: " . $clashingID,
-            ], 422);
+                "message" => "Failed to create booking",
+                "error" => $ex->getMessage()
+            ], 500);
         }
-
-        $request->user()->booking()->create($feilds);
-        return response()->json([
-            "success" => true,
-            "message" => "Room Created Successfully"
-        ], 200);
     }
 
     /**
@@ -105,7 +123,19 @@ class BookingController extends Controller implements HasMiddleware
      */
     public function show(Booking $booking)
     {
-        //
+        try {
+            return response()->json([
+                "success" => true,
+                "message" => "Booking retrived Successfully",
+                "data" => $booking
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to retrive booking",
+                "error" => $ex->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -113,7 +143,83 @@ class BookingController extends Controller implements HasMiddleware
      */
     public function update(Request $request, Booking $booking)
     {
-        //
+        $feilds = $request->validate([
+            "guest_name" => "required",
+            "guest_nic" => "required",
+            "contact_number" => "required",
+            "occupancy" => "required|numeric",
+            "check_in_date" => "required|date",
+            "check_out_date" => "required|date|after:check_in_date",
+            "room_id" => "required|exists:rooms,id",
+            "total" => "required|numeric",
+            "advance" => "nullable|numeric",
+            "outstanding" => "required|numeric",
+            "nic_front" => "nullable|image|mimes:jpeg,png,jpg|max:2048",
+            "nic_back" => "nullable|image|mimes:jpeg,png,jpg|max:2048",
+            "vehicle_number" => "nullable",
+            "check_in_time" => "nullable|date_format:H:i",
+            "check_out_time" => "nullable|date_format:H:i",
+            "expected_arrival_time" => "required|date_format:H:i",
+            "actual_leaving_time" => "required|date_format:H:i",
+            "status" => "required"
+        ]);
+
+        try {
+            $room = Room::find($feilds["room_id"]);
+            if (!$room->isAvailable()) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Selected room isn't available for booking"
+                ], 422);
+            }
+            if (!$room) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Invalid Room"
+                ], 404);
+            }
+            if ($room->canAccommodate($feilds["occupancy"])) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Booking occupancy exceeds the room capacity"
+                ], 422);
+            }
+
+            $clashingID = Booking::getClashingBookingId($feilds, $booking->id);
+            if ($clashingID !== null) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Booking clashes with existing booking ID: " . $clashingID,
+                ], 422);
+            }
+
+            if ($request->hasFile("nic_front")) {
+                if ($booking->nic_front && Storage::disk('public')->exists($booking->nic_front)) {
+                    Storage::disk('public')->delete($booking->nic_front);
+                }
+                $nicFrontPath = $request->file('nic_front')->store("nic_front", "public");
+                $feilds["nic_front"] = $nicFrontPath;
+            }
+            if ($request->hasFile("nic_back")) {
+                if ($booking->nic_back && Storage::disk('public')->exists($booking->nic_back)) {
+                    Storage::disk('public')->delete($booking->nic_back);
+                }
+                $nicBackPath = $request->file('nic_back')->store("nic_back", "public");
+                $feilds["nic_back"] = $nicBackPath;
+            }
+
+            $booking->update($feilds);
+            return response()->json([
+                "success" => true,
+                "message" => "Booking Updated Successfully"
+            ], 200);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to update booking",
+                "error" => $ex->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -121,6 +227,18 @@ class BookingController extends Controller implements HasMiddleware
      */
     public function destroy(Booking $booking)
     {
-        //
+        try {
+            $booking->delete();
+            return response()->json([
+                "success" => true,
+                "message" => "Room Deleted Successfully"
+            ], 200);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to delete room",
+                "error" => $ex
+            ], 500);
+        }
     }
 }
