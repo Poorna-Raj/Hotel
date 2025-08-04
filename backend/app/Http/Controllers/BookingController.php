@@ -8,6 +8,7 @@ use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 class BookingController extends Controller implements HasMiddleware
@@ -45,28 +46,27 @@ class BookingController extends Controller implements HasMiddleware
      */
     public function store(Request $request)
     {
-        $feilds = $request->validate([
-            "guest_name" => "required",
-            "guest_nic" => "required",
-            "contact_number" => "required",
-            "occupancy" => "required|numeric",
-            "check_in_date" => "required|date",
-            "check_out_date" => "required|date|after:check_in_date",
-            "room_id" => "required|exists:rooms,id",
-            "total" => "required|numeric",
-            "advance" => "nullable|numeric",
-            "outstanding" => "required|numeric",
-            "nic_front" => "nullable|image|mimes:jpeg,png,jpg|max:2048",
-            "nic_back" => "nullable|image|mimes:jpeg,png,jpg|max:2048",
-            "vehicle_number" => "nullable",
-            "check_in_time" => "nullable|date_format:H:i",
-            "check_out_time" => "nullable|date_format:H:i",
-            "expected_arrival_time" => "required|date_format:H:i",
-            "actual_leaving_time" => "required|date_format:H:i",
-            "status" => "required"
-        ]);
-
         try {
+            $feilds = $request->validate([
+                "guest_name" => "required",
+                "guest_nic" => "required",
+                "contact_number" => "required",
+                "occupancy" => "required|numeric",
+                "check_in_date" => "required|date",
+                "check_out_date" => "required|date|after:check_in_date",
+                "room_id" => "required|exists:rooms,id",
+                "total" => "required|numeric",
+                "advance" => "nullable|numeric",
+                "outstanding" => "required|numeric",
+                "nic_front" => "nullable|image|mimes:jpeg,png,jpg|max:2048",
+                "nic_back" => "nullable|image|mimes:jpeg,png,jpg|max:2048",
+                "vehicle_number" => "nullable",
+                "check_in_time" => "nullable|date_format:H:i",
+                "check_out_time" => "nullable|date_format:H:i",
+                "expected_arrival_time" => "required|date_format:H:i",
+                "actual_leaving_time" => "required|date_format:H:i",
+                "status" => "required"
+            ]);
             $room = Room::find($feilds["room_id"]);
             if (!$room->isAvailable()) {
                 return response()->json([
@@ -80,7 +80,7 @@ class BookingController extends Controller implements HasMiddleware
                     "message" => "Invalid Room"
                 ], 404);
             }
-            if ($room->canAccommodate($feilds["occupancy"])) {
+            if (!($room->canAccommodate($feilds["occupancy"]))) {
                 return response()->json([
                     "success" => false,
                     "message" => "Booking occupancy exceeds the room capacity"
@@ -95,11 +95,11 @@ class BookingController extends Controller implements HasMiddleware
                 ], 422);
             }
 
-            if ($request->hasFile("nic_front")) {
+            if ($request->hasFile("nic_front") && $request->file('nic_front')->isValid()) {
                 $nicFrontPath = $request->file('nic_front')->store("nic_front", "public");
                 $feilds["nic_front"] = $nicFrontPath;
             }
-            if ($request->hasFile("nic_back")) {
+            if ($request->hasFile("nic_back") && $request->file('nic_back')->isValid()) {
                 $nicBackPath = $request->file('nic_back')->store("nic_back", "public");
                 $feilds["nic_back"] = $nicBackPath;
             }
@@ -109,6 +109,12 @@ class BookingController extends Controller implements HasMiddleware
                 "success" => true,
                 "message" => "Room Created Successfully"
             ], 200);
+        } catch (ValidationException $e) {
+            // Return validation errors with 422 status (not 500)
+            return response()->json([
+                "success" => false,
+                "error" => $e->errors()
+            ], 422);
         } catch (Exception $ex) {
             return response()->json([
                 "success" => false,

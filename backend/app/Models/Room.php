@@ -39,6 +39,6 @@ class Room extends Model
     }
     public function canAccommodate(int $occupancy): bool
     {
-        return $occupancy <= $this->occpancy;
+        return $occupancy <= $this->occupancy;
     }
 }

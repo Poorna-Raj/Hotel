@@ -61,12 +61,12 @@ class Booking extends Model
             })
             ->get();
 
-        $start1 = Carbon::parse($data['check_in_date'] . ' ' . $data['check_in_time']);
-        $end1 = Carbon::parse($data['check_out_date'] . ' ' . $data['check_out_time']);
+        $start1 = Carbon::parse($data['check_in_date'] . ' ' . $data['expected_arrival_time']);
+        $end1 = Carbon::parse($data['check_out_date'] . ' ' . $data['actual_leaving_time']);
 
         foreach ($potentialClashes as $existing) {
-            $start2 = Carbon::parse($existing->check_in_date . ' ' . $existing->check_in_time)->subMinutes(30);
-            $end2 = Carbon::parse($existing->check_out_date . ' ' . $existing->check_out_time)->addMinutes(30);
+            $start2 = Carbon::parse($existing->check_in_date . ' ' . $existing->expected_arrival_time)->subMinutes(30);
+            $end2 = Carbon::parse($existing->check_out_date . ' ' . $existing->actual_leaving_time)->addMinutes(30);
 
             if ($start1->lt($end2) && $end1->gt($start2)) {
                 return $existing->id;
