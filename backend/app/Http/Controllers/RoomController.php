@@ -139,4 +139,26 @@ class RoomController extends Controller implements HasMiddleware
             ], 500);
         }
     }
+
+    public function changeStatus(Room $room, Request $request)
+    {
+        try {
+            $feilds = $request->validate([
+                "status" => "required"
+            ]);
+            $room->status = $feilds["status"];
+            $room->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Room status updated successfully'
+            ], 200);
+        } catch (Exception $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Room status update failed',
+                'error' => $ex->getMessage()
+            ], 200);
+        }
+    }
 }

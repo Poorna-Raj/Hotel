@@ -12,3 +12,4 @@ Route::post("/logout", [AuthController::class, "logout"])->middleware("auth:sanc
 
 Route::apiResource("rooms", RoomController::class);
 Route::apiResource("booking", BookingController::class);
+Route::put("/rooms/status/{room}", [RoomController::class, "changeStatus"]);
