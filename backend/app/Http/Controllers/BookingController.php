@@ -184,7 +184,7 @@ class BookingController extends Controller implements HasMiddleware
                     "message" => "Invalid Room"
                 ], 404);
             }
-            if ($room->canAccommodate($feilds["occupancy"])) {
+            if (!($room->canAccommodate($feilds["occupancy"]))) {
                 return response()->json([
                     "success" => false,
                     "message" => "Booking occupancy exceeds the room capacity"
