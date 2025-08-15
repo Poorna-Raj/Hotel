@@ -11,5 +11,7 @@ Route::post("/login", [AuthController::class, "login"]);
 Route::post("/logout", [AuthController::class, "logout"])->middleware("auth:sanctum");
 
 Route::apiResource("rooms", RoomController::class);
-Route::apiResource("booking", BookingController::class);
 Route::put("/rooms/status/{room}", [RoomController::class, "changeStatus"]);
+
+Route::apiResource("booking", BookingController::class);
+Route::get('/rooms/bookings/stats', [BookingController::class, 'roomBookingStats']);

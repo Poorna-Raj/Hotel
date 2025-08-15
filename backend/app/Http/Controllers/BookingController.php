@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use Carbon\Carbon;
 use App\Models\Room;
 use App\Models\Booking;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Validation\ValidationException;
@@ -246,5 +248,25 @@ class BookingController extends Controller implements HasMiddleware
                 "error" => $ex
             ], 500);
         }
+    }
+
+    public function roomBookingStats(Request $request)
+    {
+        // Optional: allow month/year filter
+        $month = $request->query('month', Carbon::now()->month);
+        $year = $request->query('year', Carbon::now()->year);
+
+        // Get bookings for the given month
+        $stats = DB::table('bookings')
+            ->select('room_id', DB::raw('COUNT(*) as total_bookings'))
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->groupBy('room_id')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats
+        ]);
     }
 }
