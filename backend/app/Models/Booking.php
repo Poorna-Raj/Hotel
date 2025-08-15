@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use App\Models\Room;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Carbon\Carbon;
 
 class Booking extends Model
 {
@@ -76,4 +77,14 @@ class Booking extends Model
         return null; // No clash found
     }
 
+    public static function getMonthlyStatusCount($month, $year)
+    {
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+
+        return Booking::select('status', DB::raw('COUNT(*) as total'))
+            ->whereBetween('check_in_date', [$startDate, $endDate])
+            ->groupBy('status')
+            ->get();
+    }
 }

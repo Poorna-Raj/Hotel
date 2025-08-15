@@ -18,7 +18,7 @@ class BookingController extends Controller implements HasMiddleware
     public static function middleware()
     {
         return [
-            new Middleware("auth:sanctum", except: ["index", "show"])
+            new Middleware("auth:sanctum", except: ["index", "show", "getBookingStatusForMonth"])
         ];
     }
     /**
@@ -268,5 +268,25 @@ class BookingController extends Controller implements HasMiddleware
             'success' => true,
             'data' => $stats
         ]);
+    }
+
+    public function getBookingStatusForMonth(Request $request)
+    {
+        try {
+            $month = $request->query('month', Carbon::now()->month);
+            $year = $request->query('year', Carbon::now()->year);
+            $counts = Booking::getMonthlyStatusCount($month, $year);
+            return response()->json([
+                "success" => true,
+                "message" => "Data Retrived Success",
+                "data" => $counts
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Something went wrong!",
+                "error" => $ex->getMessage()
+            ]);
+        }
     }
 }
