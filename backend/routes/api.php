@@ -16,3 +16,4 @@ Route::put("/rooms/status/{room}", [RoomController::class, "changeStatus"]);
 Route::apiResource("booking", BookingController::class);
 Route::get('/rooms/bookings/stats', [BookingController::class, 'roomBookingStats']);
 Route::get("/bookings/stats", [BookingController::class, "getBookingStatusForMonth"]);
+Route::get("/bookings/month", [BookingController::class, "monthlyTrend"]);

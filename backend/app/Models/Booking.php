@@ -87,4 +87,35 @@ class Booking extends Model
             ->groupBy('status')
             ->get();
     }
+    public static function getLastFiveMonthsCount()
+    {
+        $startDate = Carbon::now()->subMonths(4)->startOfMonth();
+        $endDate = Carbon::now()->endOfMonth();
+
+        return self::select(
+            DB::raw("strftime('%Y', check_in_date) as year"),
+            DB::raw("strftime('%m', check_in_date) as month_number"),
+            DB::raw("strftime('%Y', check_in_date) || '-' || strftime('%m', check_in_date) as month_key"),
+            DB::raw("CASE strftime('%m', check_in_date)
+                        WHEN '01' THEN 'January'
+                        WHEN '02' THEN 'February'
+                        WHEN '03' THEN 'March'
+                        WHEN '04' THEN 'April'
+                        WHEN '05' THEN 'May'
+                        WHEN '06' THEN 'June'
+                        WHEN '07' THEN 'July'
+                        WHEN '08' THEN 'August'
+                        WHEN '09' THEN 'September'
+                        WHEN '10' THEN 'October'
+                        WHEN '11' THEN 'November'
+                        WHEN '12' THEN 'December'
+                    END as month_name"),
+            DB::raw('COUNT(*) as total')
+        )
+            ->whereBetween('check_in_date', [$startDate, $endDate])
+            ->groupBy(DB::raw("strftime('%Y', check_in_date)"), DB::raw("strftime('%m', check_in_date)"))
+            ->orderBy(DB::raw("strftime('%Y', check_in_date)"), 'asc')
+            ->orderBy(DB::raw("strftime('%m', check_in_date)"), 'asc')
+            ->get();
+    }
 }
