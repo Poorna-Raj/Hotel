@@ -118,4 +118,23 @@ class Booking extends Model
             ->orderBy(DB::raw("strftime('%m', check_in_date)"), 'asc')
             ->get();
     }
+
+    public static function getTodayCheckIns()
+    {
+        return self::whereDate('check_in_date', now()->toDateString())
+            ->where('status', 'Booked')
+            ->get();
+    }
+
+    public static function getOngoing()
+    {
+        return self::where('status', 'Checked In')->get();
+    }
+
+    public static function getTodayCheckOuts()
+    {
+        return self::whereDate('check_out_date', Carbon::today())
+            ->where('status', 'Checked In')
+            ->get();
+    }
 }

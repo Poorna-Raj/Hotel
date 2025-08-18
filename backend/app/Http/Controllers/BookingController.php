@@ -18,7 +18,7 @@ class BookingController extends Controller implements HasMiddleware
     public static function middleware()
     {
         return [
-            new Middleware("auth:sanctum", except: ["index", "show", "getBookingStatusForMonth", "monthlyTrend"])
+            new Middleware("auth:sanctum", except: ["index", "show", "getBookingStatusForMonth", "monthlyTrend", "currentBookings", "onGoingBookings", "checkedOutBookings"])
         ];
     }
     /**
@@ -298,6 +298,60 @@ class BookingController extends Controller implements HasMiddleware
                 'success' => true,
                 'message' => 'Data Retrieved Success',
                 'data' => $data
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Something went wrong",
+                "error" => $ex->getMessage()
+            ]);
+        }
+    }
+
+    public function currentBookings()
+    {
+        try {
+            $todayCheckIns = Booking::getTodayCheckIns();
+            return response()->json([
+                "success" => true,
+                "message" => "Bookings retrived success",
+                "data" => $todayCheckIns
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Something went wrong",
+                "error" => $ex->getMessage()
+            ]);
+        }
+    }
+
+    public function onGoingBookings()
+    {
+        try {
+            $todayCheckIns = Booking::getOngoing();
+            return response()->json([
+                "success" => true,
+                "message" => "Bookings retrived success",
+                "data" => $todayCheckIns
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Something went wrong",
+                "error" => $ex->getMessage()
+            ]);
+        }
+    }
+
+    public function checkedOutBookings()
+    {
+        try {
+            $todayCheckOuts = Booking::getTodayCheckOuts();
+            return response()->json([
+                "success" => true,
+                "message" => "Bookings retrived success",
+                "data" => $todayCheckOuts
             ]);
         } catch (Exception $ex) {
             return response()->json([
