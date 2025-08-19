@@ -236,16 +236,28 @@ class BookingController extends Controller implements HasMiddleware
     public function destroy(Booking $booking)
     {
         try {
+            // Delete NIC front image if it exists
+            if ($booking->nic_front && Storage::exists($booking->nic_front)) {
+                Storage::delete($booking->nic_front);
+            }
+
+            // Delete NIC back image if it exists
+            if ($booking->nic_back && Storage::exists($booking->nic_back)) {
+                Storage::delete($booking->nic_back);
+            }
+
+            // Delete the booking record
             $booking->delete();
+
             return response()->json([
                 "success" => true,
-                "message" => "Room Deleted Successfully"
+                "message" => "Booking and associated NIC images deleted successfully"
             ], 200);
         } catch (Exception $ex) {
             return response()->json([
                 "success" => false,
-                "message" => "Failed to delete room",
-                "error" => $ex
+                "message" => "Failed to delete booking",
+                "error" => $ex->getMessage()
             ], 500);
         }
     }
@@ -352,6 +364,75 @@ class BookingController extends Controller implements HasMiddleware
                 "success" => true,
                 "message" => "Bookings retrived success",
                 "data" => $todayCheckOuts
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Something went wrong",
+                "error" => $ex->getMessage()
+            ]);
+        }
+    }
+
+    public static function updateCheckIn(Booking $booking, Request $request)
+    {
+        try {
+            $fields = $request->validate([
+                "nic_front" => "required|image|mimes:jpeg,png,jpg|max:2048",
+                "nic_back" => "required|image|mimes:jpeg,png,jpg|max:2048",
+                "vehicle_number" => "required|string|max:50",
+                "check_in_time" => "required"
+            ]);
+
+            // Handle NIC Front upload
+            if ($request->hasFile('nic_front')) {
+                $nicFrontPath = $request->file('nic_front')->store('nic_images', 'public');
+                $booking->nic_front = $nicFrontPath;
+            }
+
+            // Handle NIC Back upload
+            if ($request->hasFile('nic_back')) {
+                $nicBackPath = $request->file('nic_back')->store('nic_images', 'public');
+                $booking->nic_back = $nicBackPath;
+            }
+
+            $booking->vehicle_number = $fields['vehicle_number'];
+
+            // Optionally update status to "Checked In"
+            $booking->status = "Checked In";
+
+            $booking->check_in_time = $fields["check_in_time"];
+
+            // Save the booking
+            $booking->save();
+
+            return response()->json([
+                "success" => true,
+                "message" => "Check-in details updated successfully",
+                "booking" => $booking
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                "success" => false,
+                "message" => "Something went wrong",
+                "error" => $ex->getMessage()
+            ]);
+        }
+    }
+
+    public static function updateCheckOut(Booking $booking, Request $request)
+    {
+        try {
+            $feilds = $request->validate([
+                "check_out_time" => "required"
+            ]);
+            $booking->check_out_time = $feilds["check_out_time"];
+            $booking->status = "Checked Out";
+
+            $booking->save();
+            return response()->json([
+                "success" => true,
+                "message" => "Update Success"
             ]);
         } catch (Exception $ex) {
             return response()->json([

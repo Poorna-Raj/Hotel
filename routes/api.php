@@ -20,3 +20,5 @@ Route::get("/bookings/month", [BookingController::class, "monthlyTrend"]);
 Route::get("/bookings/current", [BookingController::class, "currentBookings"]);
 Route::get("/bookings/ongoing", [BookingController::class, "onGoingBookings"]);
 Route::get("/bookings/checkOuts", [BookingController::class, "checkedOutBookings"]);
+Route::put("/bookings/{booking}/checkin", [BookingController::class, "updateCheckIn"]);
+Route::put("/bookings/{booking}/checkout", [BookingController::class, "updateCheckOut"]);
