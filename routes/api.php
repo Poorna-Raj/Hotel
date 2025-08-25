@@ -22,3 +22,11 @@ Route::get("/bookings/ongoing", [BookingController::class, "onGoingBookings"]);
 Route::get("/bookings/checkOuts", [BookingController::class, "checkedOutBookings"]);
 Route::put("/bookings/{booking}/checkin", [BookingController::class, "updateCheckIn"]);
 Route::put("/bookings/{booking}/checkout", [BookingController::class, "updateCheckOut"]);
+
+
+Route::get('/run-cache-clear', function () {
+    Artisan::call('config:clear');
+    Artisan::call('cache:clear');
+    Artisan::call('route:cache');
+    return "Caches cleared!";
+});
